@@ -33,7 +33,9 @@ HTML项目mc.html用的是bootstrap框架，手机PC自适应，部分设置项�
 ## 截图演示
 
 电脑版：
+
 ![](https://github.com/zerochocobo/Multi-Countdown/blob/master/snap/pc.png?raw=true)
 
 手机版：
+
 ![](https://github.com/zerochocobo/Multi-Countdown/blob/master/snap/mobile.png?raw=true)
