@@ -21,9 +21,9 @@
 
 ## 技术说明
 
-	HTML项目mc.html用的是bootstrap框架，手机PC自适应，部分设置项必须PC大屏才能设置（删除、修改），一定程度上避免手机误操作。
+HTML项目mc.html用的是bootstrap框架，手机PC自适应，部分设置项必须PC大屏才能设置（删除、修改），一定程度上避免手机误操作。
 	
-	服务器端mc.ashx是ASP.NET代码，将用户配置json内容保存在默认的mc目录下（需要自己新建）。文件名混淆后md5加密，有管理员后门可以设定。
+服务器端mc.ashx是ASP.NET代码，将用户配置json内容保存在默认的mc目录下（需要自己新建）。文件名混淆后md5加密，有管理员后门可以设定。
 
 	
 ## 一些技术细节
@@ -33,7 +33,7 @@
 ## 截图演示
 
 电脑版：
-![](img_url)
+![](https://github.com/zerochocobo/Multi-Countdown/blob/master/snap/pc.png?raw=true)
 
 手机版：
-![](img_url)
+![](https://github.com/zerochocobo/Multi-Countdown/blob/master/snap/mobile.png?raw=true)
