@@ -1,0 +1,448 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>多倒计时器</title>
+    <meta charset="utf-8" />
+    <!--基础开发DennisZhong(Chocobo)，https://github.com/zerochocobo/Multi-Countdown，使用代码请勿删除此行-->
+    <!-- Latest compiled and minified CSS -->
+    <link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <!-- Optional theme -->
+    <link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap-theme.min.css" integrity="sha384-rHyoN1iRsVXV4nD0JutlnGaslCJuC7uwjduW9SVrLvRYooPp2bWYgmgJQIXwl/Sp" crossorigin="anonymous">
+    <!--<script>
+        if (location.protocol != 'https:') {
+            //location.href = 'https:' + window.location.href.substring(window.location.protocol.length);
+            location.href = "https://xxxxx/mc.html";
+        }
+    </script>-->
+</head>
+<body>
+    <div class="container">
+        <div class="input-group">
+            <span class="input-group-addon" id="mode_addon">当前:私人模式</span>
+            <input type="text" id="group_key" class="form-control" placeholder="输入团队秘钥" value="" aria-describedby="mode_addon" />
+            <span class="input-group-btn">
+                <button class="btn btn-primary" type="button" id="swith_group_btn">切换到团队模式</button>
+                <button class="btn btn-primary hidden" type="button" id="refresh_group_btn"><span class="glyphicon glyphicon-refresh" aria-hidden="true"></span> 刷新他人更新</button>
+            </span>
+        </div><!-- /input-group -->
+        <table class="table table-hover">
+            <thead>
+                <tr>
+                    <th class="hidden-xs">操作</th>
+                    <th>项目</th>
+                    <th class="hidden-xs">配置</th>
+                    <th class="hidden-xs">重置时间</th>
+                    <th>剩余</th>
+                    <th>预计</th>
+                    <th>重置</th>
+                </tr>
+            </thead>
+            <tbody  id="btn_list">
+            </tbody>
+        </table>
+        <div class="row">
+            <div class="col-lg-6">
+            <button class="btn btn-primary" id="add_new_item"><span class="glyphicon glyphicon-plus" aria-hidden="true"></span> 添加新项</button>
+            </div>
+        </div><!-- /.row -->
+        <span id="error_label"></span>
+    </div>
+    <input type="hidden" id="common_confirm_btn" class="btn btn-primary btn-lg" data-toggle="modal" data-target="#common_confirm_model">
+    <div id="common_confirm_model" class="modal">
+        <div class="modal-dialog modal-sm">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <button type="button" class="close" data-dismiss="modal"><span aria-hidden="true">&times;</span><span class="sr-only">Close</span></button>
+                    <h5 class="modal-title"><i class="fa fa-exclamation-circle"></i> <span class="title"></span></h5>
+                </div>
+                <div class="modal-body small">
+                    <p><span class="message"></span></p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-primary ok" data-dismiss="modal">确认</button>
+                    <button type="button" class="btn btn-default cancel" data-dismiss="modal">取消</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!--载入jquery-->
+    <script src="//apps.bdimg.com/libs/jquery/2.1.4/jquery.min.js"></script>
+    <!-- Latest compiled and minified JavaScript -->
+    <script src="//cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+    <!--载入动态模板框架-->
+    <script type='text/javascript' src="./js/template.js"></script>
+    <script id="listRowTemplate" type="text/html">
+            {{each data as item index}}
+            <tr id="tr_{{index}}" class="">
+                <td class="hidden-xs">
+                    <div class="btn-group" role="group" aria-label="">
+                        <button data-index="{{index}}" data-name="{{item.name}}" class="btn btn-xs btn-danger item_del"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span> 删除</button>
+                        <button data-index="{{index}}" data-name="{{item.name}}" class="btn btn-xs btn-warning item_edit visible-lg"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span> 修改</button>
+                    </div>
+                </td>
+                <td>{{item.name}}</td>
+                <td class="hidden-xs">{{item.refresh}}m/{{item.live}}m</td>
+                <td class="hidden-xs">{{item.tstr}}</td>
+                <td><span class="countdown" id="countdown_{{index}}">00:00</span>
+                <span class="badge hidden" id="badge_{{index}}">0</span>
+                <input type="hidden" name="ts_{{index}}" class="ts_h" value="{{item.ts}}"/>
+                    <input type="hidden" name="refresh_{{index}}" class="refresh_h" value="{{item.refresh}}" />
+                    <input type="hidden" name="live_{{index}}" class="live_h" value="{{item.live}}" />
+                </td>
+                <td><span id="predict_time_{{index}}">00:00</span></td>
+                <td>
+                    <div class="btn-group" role="group" aria-label="">
+                        <button data-index="{{index}}" data-name="{{item.name}}" class="btn btn-xs btn-success item_reset_min"><span class="glyphicon glyphicon-time" aria-hidden="true"></span> 定时</button>
+                        <button data-index="{{index}}" data-name="{{item.name}}" class="btn btn-xs btn-warning item_reset"><span class="glyphicon glyphicon-repeat" aria-hidden="true"></span> 重置</button>
+                    </div>
+                </td>
+            </tr>
+            {{/each}}
+    </script>
+    <script>
+        var Common = {
+            confirm:function(params){
+                var model = $("#common_confirm_model");
+                model.find(".title").html(params.title)
+                model.find(".message").html(params.message)
+                $("#common_confirm_btn").click()
+                //每次都将监听先关闭，防止多次监听发生，确保只有一次监听
+                model.find(".cancel").off("click");
+                model.find(".ok").off("click");
+                model.find(".ok").on("click",function(){
+                    params.operate(true)
+                })
+                model.find(".cancel").on("click",function(){
+                    params.operate(false)
+                })
+            }
+        }
+        // 对Date的扩展，将 Date 转化为指定格式的String
+        // 月(M)、日(d)、小时(h)、分(m)、秒(s)、季度(q) 可以用 1-2 个占位符， 
+        // 年(y)可以用 1-4 个占位符，毫秒(S)只能用 1 个占位符(是 1-3 位的数字) 
+        // 例子： 
+        // (new Date()).Format("yyyy-MM-dd hh:mm:ss.S") ==> 2006-07-02 08:09:04.423 
+        // (new Date()).Format("yyyy-M-d h:m:s.S")      ==> 2006-7-2 8:9:4.18 
+        Date.prototype.Format = function (fmt) { //author: meizz 
+            var o = {
+                "M+": this.getMonth() + 1, //月份 
+                "d+": this.getDate(), //日 
+                "h+": this.getHours(), //小时 
+                "m+": this.getMinutes(), //分 
+                "s+": this.getSeconds(), //秒 
+                "q+": Math.floor((this.getMonth() + 3) / 3), //季度 
+                "S": this.getMilliseconds() //毫秒 
+            };
+            if (/(y+)/.test(fmt)) fmt = fmt.replace(RegExp.$1, (this.getFullYear() + "").substr(4 - RegExp.$1.length));
+            for (var k in o)
+                if (new RegExp("(" + k + ")").test(fmt)) fmt = fmt.replace(RegExp.$1, (RegExp.$1.length == 1) ? (o[k]) : (("00" + o[k]).substr(("" + o[k]).length)));
+            return fmt;
+        }
+        //+---------------------------------------------------  
+        //| 日期计算  
+        //+---------------------------------------------------  
+        Date.prototype.DateAdd = function (strInterval, Number) {
+            var dtTmp = this;
+            switch (strInterval) {
+                case 't': return new Date(Date.parse(dtTmp) + (Number));
+                case 's': return new Date(Date.parse(dtTmp) + (1000 * Number));
+                case 'n': return new Date(Date.parse(dtTmp) + (60000 * Number));
+                case 'h': return new Date(Date.parse(dtTmp) + (3600000 * Number));
+                case 'd': return new Date(Date.parse(dtTmp) + (86400000 * Number));
+                case 'w': return new Date(Date.parse(dtTmp) + ((86400000 * 7) * Number));
+                case 'q': return new Date(dtTmp.getFullYear(), (dtTmp.getMonth()) + Number * 3, dtTmp.getDate(), dtTmp.getHours(), dtTmp.getMinutes(), dtTmp.getSeconds());
+                case 'm': return new Date(dtTmp.getFullYear(), (dtTmp.getMonth()) + Number, dtTmp.getDate(), dtTmp.getHours(), dtTmp.getMinutes(), dtTmp.getSeconds());
+                case 'y': return new Date((dtTmp.getFullYear() + Number), dtTmp.getMonth(), dtTmp.getDate(), dtTmp.getHours(), dtTmp.getMinutes(), dtTmp.getSeconds());
+            }
+        }
+
+
+
+        var group_mode = false;
+        var saved_groupkey = localStorage.getItem("groupkey");
+        if (saved_groupkey) {
+            $("#group_key").val(saved_groupkey);
+        }
+
+        json = { "data": [] }
+        //清空
+        //localStorage.setItem("list", JSON.stringify(json));
+        var localstr = localStorage.getItem("list");
+        if (localstr != null) {
+            json = JSON.parse(localstr);
+            //alert(JSON.stringify(json))
+            loadList();
+        }
+
+
+
+        $("#add_new_item").on("click", function () {
+            Common.confirm({
+                title: "新建倒计时项目",
+                message: "输入名称：<input type='text' value='狸猫' id='new_name_input' class='form-control' /><br />刷新时间：<input type='number' id='new_refresh_input' class='form-control' value='30' /><br />平均持续：<input type='number' id='new_live_input' class='form-control' value='1' /><br />",
+                operate: function (reselt) {
+                    if (reselt) {
+                        reload_json(function (return_json) {
+                            if (return_json) {
+                                json = return_json;
+                                var new_name = $("#new_name_input").val();
+                                var new_refresh = $("#new_refresh_input").val();
+                                var new_live = $("#new_live_input").val();
+                                var currdate = new Date();
+                                var timestamp = Date.parse(currdate);
+                                var timestr = currdate.Format("hh:mm:ss");//.toLocaleTimeString();.toLocaleTimeString();
+                                json.data.push(JSON.parse("{\"name\":\"" + new_name + "\",\"refresh\":" + new_refresh + ",\"live\":" + new_live + ",\"ts\":" + timestamp + ",\"tstr\":\"" + timestr + "\"}"));
+                                save_json();
+                                loadList();
+                            }
+                        });
+                    } else {
+                    }
+                }
+            })
+        });
+
+
+        $(document).on("click", ".item_edit", function () {
+            var index = $(this).data("index");
+            Common.confirm({
+                title: "修改倒计时项目",
+                message: "输入名称：<input type='text' value='" + json.data[index].name + "' id='edit_name_input' class='form-control' /><br />刷新时间：<input type='number' id='edit_refresh_input' class='form-control' value='" + json.data[index].refresh + "' /><br />平均持续：<input type='number' id='edit_live_input' class='form-control' value='" + json.data[index].live + "' /><br />",
+                operate: function (reselt) {
+                    if (reselt) {
+                        reload_json(function (return_json) {
+                            if (return_json) {
+                                json = return_json;
+                                var edit_name = $("#edit_name_input").val();
+                                var edit_refresh = parseInt($("#edit_refresh_input").val());
+                                var edit_live = parseInt($("#edit_live_input").val());
+                                json.data[index].name = edit_name;
+                                json.data[index].refresh = edit_refresh;
+                                json.data[index].live = edit_live;
+                                save_json();
+                                loadList();
+                            }
+                        });
+                    } else {
+                    }
+                }
+            })
+        });
+
+
+        function save_json() {
+            if (group_mode) {
+                var groupkey = $("#group_key").val();
+                $.ajax({
+                    type: "post",
+                    url: "mc.ashx?key=" + encodeURIComponent(groupkey),
+                    contentType: "application/json; charset=utf-8",
+                    data: JSON.stringify(json),
+                    dataType: "json",
+                    success: 
+                     function (return_json) {
+                        if (return_json) {
+                            if (return_json.data) {
+                                json = return_json;
+                                loadList();
+                            }
+                            else {
+                                $("#error_label").text("接口错误");
+                            }
+                        }
+                    },
+                    failure: function (response) {
+                        //alert(response);
+                    }
+                });
+            }
+            else {
+                //local save
+                localStorage.setItem("list", JSON.stringify(json));
+            }
+        }
+        
+        function reload_json(success_funtion) {
+            if (group_mode) {
+                var groupkey = $("#group_key").val();
+                $.ajax({
+                    type: "get",
+                    url: "mc.ashx",
+                    dataType: "json",
+                    data: "key=" + encodeURIComponent(groupkey),
+                    success: success_funtion,
+                    error: function () {
+                        //$("#error_label").text("载入失败，可能是网络不通");
+                    }
+                });
+            }
+            else {
+                success_funtion(json);
+            }
+        }
+
+        $("#refresh_group_btn").on("click", function () {
+            reload_json(function (return_json) {
+                if (return_json) {
+                    if (return_json.data) {
+                        json = return_json;
+                        loadList();
+                    }
+                }
+            });
+        });
+        $("#swith_group_btn").on("click", function () {
+            var groupkey = $("#group_key").val();
+            $.ajax({
+                type:"get",
+                url: "mc.ashx",
+                dataType: "json",
+                data: "key=" + encodeURIComponent(groupkey),
+                success: function (return_json) {
+                    if (return_json) {
+                        if (return_json.data) {
+                            json = return_json;
+                            loadList();
+                            $("#group_key").attr("disabled","disabled");
+                            $("#swith_group_btn").addClass("hidden");
+                            $("#refresh_group_btn").removeClass("hidden")
+                            group_mode = true;
+                            localStorage.setItem("groupkey", groupkey);
+                            $("#mode_addon").text("当前:团队模式")
+                        }
+                        else {
+                            $("#error_label").text("接口错误");
+                        }
+                    }
+                },
+                error: function () {
+                    $("#error_label").text("载入失败，可能是网络不通");
+                }
+            });
+        });
+
+        $(document).on("click", ".item_reset", function () {
+            var index = $(this).data("index");
+            Common.confirm({
+                title: "重置时间",
+                message: "确定要重置\"" + $(this).data("name") + "\"的倒计时时间吗？",
+                operate: function (reselt) {
+                    if (reselt) {
+                        reload_json(function (return_json) {
+                            if (return_json) {
+                                json = return_json;
+                                var currdate = new Date();
+                                var timestamp = Date.parse(currdate);
+                                var timestr = currdate.Format("hh:mm:ss");//.toLocaleTimeString();
+                                json.data[index].ts = timestamp;
+                                json.data[index].tstr = timestr;
+                                save_json();
+                                loadList();
+                            }
+                        });
+                    } else {
+                    }
+                }
+            })
+        });
+
+        $(document).on("click", ".item_reset_min", function () {
+            var index = $(this).data("index");
+            var refresh = json.data[index].refresh;
+            Common.confirm({
+                title: "手动设置\"" + $(this).data("name") + "\"还有精确几分钟",
+                message: "剩余时间：<input type='number' id='edit_refresh_input' class='form-control' value='20' />",
+                operate: function (reselt) {
+                    if (reselt) {
+                        reload_json(function (return_json) {
+                            if (return_json) {
+                                json = return_json;
+                                var currdate = new Date();
+                                var left_min = parseInt($("#edit_refresh_input").val());
+                                var timestamp = Date.parse(currdate);
+                                var timestr = currdate.Format("hh:mm:ss");//.toLocaleTimeString();
+                                json.data[index].ts = timestamp - refresh * 60 * 1000 + left_min * 60 * 1000;
+                                json.data[index].tstr = timestr;
+                                save_json();
+                                loadList();
+                            }
+                        });
+                    } else {
+                    }
+                }
+            })
+        });
+        $(document).on("click", ".item_del", function () {
+            var index = $(this).data("index");
+            Common.confirm({
+                title: "删除确认",
+                message: "确定要删除\"" + $(this).data("name") + "\"吗？此操作不能恢复，需要手动重新添加",
+                operate: function (reselt) {
+                    if (reselt) {
+                        reload_json(function (return_json) {
+                            if (return_json) {
+                                json = return_json;
+                                json.data.splice(index, 1);
+                                save_json();
+                                loadList();
+                            }
+                        });
+                    } else {
+                    }
+                }
+            })
+        });
+        function loadList() {
+            $("#btn_list").html(template('listRowTemplate', json));
+        }
+        function pad(num, n) {
+            var len = num.toString().length;
+            while (len < n) {
+                num = "0" + num;
+                len++;
+            }
+            return num;
+        }
+        function countTime() {
+            var data_len = json.data.length;
+            for (var i = 0; i < data_len; i++) {
+                var item = json.data[i];
+                var refresh = item.refresh;
+                var live = item.live;
+                var ts = item.ts;
+                var newDate = new Date();
+                newDate.setTime(ts);
+                var time_diff = new Date() - newDate;
+                var seconds = Math.floor(time_diff / (1000)) % ((refresh + live) * 60);
+                var missing = parseInt(Math.floor(time_diff / (1000)) / ((refresh + live) * 60));
+                var left_seconds = refresh * 60 - seconds;
+                if (left_seconds < 2 * 60) {
+                    $("#tr_"+i).addClass("danger");
+                }
+                else {
+                    $("#tr_" + i).removeClass("danger");
+                }
+                var sign = "";
+                if (left_seconds < 0) {
+                    sign = "-";
+                }
+                var m_str = Math.abs(parseInt(left_seconds / 60));
+                var s_str = pad(Math.abs(left_seconds) % 60, 2);
+                $("#countdown_" + i).text(sign + m_str + ":" + s_str);
+                var predict_timestr = (newDate.DateAdd('t', time_diff + left_seconds * 1000)).Format("hh:mm:ss");
+                $("#predict_time_" + i).text(predict_timestr)
+                if (missing > 0) {
+                    $("#badge_" + i).text(missing+"").removeClass("hidden");
+                }
+                else {
+                    $("#badge_" + i).addClass("hidden");
+                }
+            }
+            setTimeout(countTime, 1000);
+        }
+        setTimeout(countTime, 1000);
+    </script>
+</body>
+</html>
