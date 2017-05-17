@@ -5,7 +5,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>多倒计时器</title>
     <meta charset="utf-8" />
-    <!--基础开发DennisZhong(Chocobo)，https://github.com/zerochocobo/Multi-Countdown，使用代码请勿删除此行-->
     <!-- Latest compiled and minified CSS -->
     <link rel="stylesheet" href="//cdn.bootcss.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
     <!-- Optional theme -->
@@ -13,7 +12,7 @@
     <!--<script>
         if (location.protocol != 'https:') {
             //location.href = 'https:' + window.location.href.substring(window.location.protocol.length);
-            location.href = "https://xxxxx/mc.html";
+            location.href = "https://api.deepmoney.cn/mc.html";
         }
     </script>-->
 </head>
@@ -30,7 +29,7 @@
         <table class="table table-hover">
             <thead>
                 <tr>
-                    <th class="hidden-xs">操作</th>
+                    <th class="hidden-xs" id="edit_td_head">操作</th>
                     <th>项目</th>
                     <th class="hidden-xs">配置</th>
                     <th class="hidden-xs">重置时间</th>
@@ -72,14 +71,14 @@
     <!-- Latest compiled and minified JavaScript -->
     <script src="//cdn.bootcss.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
     <!--载入动态模板框架-->
-    <script type='text/javascript' src="./js/template.js"></script>
+    <script type='text/javascript' src="//api.deepmoney.cn/js/template.js"></script>
     <script id="listRowTemplate" type="text/html">
             {{each data as item index}}
             <tr id="tr_{{index}}" class="">
-                <td class="hidden-xs">
+                <td class="hidden-xs edit_td">
                     <div class="btn-group" role="group" aria-label="">
                         <button data-index="{{index}}" data-name="{{item.name}}" class="btn btn-xs btn-danger item_del"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span> 删除</button>
-                        <button data-index="{{index}}" data-name="{{item.name}}" class="btn btn-xs btn-warning item_edit visible-lg"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span> 修改</button>
+                        <button data-index="{{index}}" data-name="{{item.name}}" class="btn btn-xs btn-warning item_edit"><span class="glyphicon glyphicon-edit" aria-hidden="true"></span> 修改</button>
                     </div>
                 </td>
                 <td>{{item.name}}</td>
@@ -176,6 +175,14 @@
             loadList();
         }
 
+        function switch_edit_td() {
+            if (group_mode) {
+                $(".edit_td,#edit_td_head").addClass("hidden-xs");
+            }
+            else {
+                $(".edit_td,#edit_td_head").removeClass("hidden-xs");
+            }
+        }
 
 
         $("#add_new_item").on("click", function () {
@@ -396,6 +403,7 @@
         });
         function loadList() {
             $("#btn_list").html(template('listRowTemplate', json));
+            switch_edit_td();
         }
         function pad(num, n) {
             var len = num.toString().length;
